@@ -7,3 +7,5 @@
 
 rootProject.name = 'aws-code-artifact-gradle-plugin'
 include('plugin')
+
+include 'sample-app'

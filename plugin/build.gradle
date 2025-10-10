@@ -11,10 +11,11 @@ plugins {
 
     // Apply the Groovy plugin to add support for Groovy
     id 'groovy'
+
+    id 'com.gradle.plugin-publish' version '2.0.0'
 }
 
 repositories {
-    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
@@ -25,11 +26,21 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+
+group = 'com.github.tao'
+version = '0.1.0'
+
 gradlePlugin {
+    website = 'https://github.com/TaoXiaoNj/aws-code-artifact-gradle-plugin'
+    vcsUrl = 'https://github.com/TaoXiaoNj/aws-code-artifact-gradle-plugin'
+
     // Define the plugin
     plugins {
         greeting {
             id = 'org.example.greeting'
+            displayName = 'AWS CodeArtifact Gradle Plugin'
+            description = 'A Gradle plugin to simplify interaction with AWS CodeArtifact.'
+            tags = ['aws', 'codeartifact']
             implementationClass = 'org.example.AwsCodeArtifactGradlePluginPlugin'
         }
     }

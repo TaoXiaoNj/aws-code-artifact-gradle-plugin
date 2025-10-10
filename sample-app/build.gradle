@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     // Add a dependency to test CodeArtifact repository resolution
-    // implementation 'com.cfex:java-commons:0.9.0-SNAPSHOT'  // Uncomment if you want to test real dependency resolution
+    implementation 'com.cfex:java-commons:0.19.1'  // Uncomment if you want to test real dependency resolution
     
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -41,7 +41,7 @@ test {
 }
 
 // Test task to verify plugin functionality
-task testPlugin {
+tasks.register('testPlugin') {
     doLast {
         println "=== AWS CodeArtifact Plugin Test ==="
         println "✅ Plugin applied successfully!"

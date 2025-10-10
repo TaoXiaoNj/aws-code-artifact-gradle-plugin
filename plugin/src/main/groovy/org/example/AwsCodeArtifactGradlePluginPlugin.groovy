@@ -7,6 +7,8 @@ package org.example
 import org.gradle.api.Project
 import org.gradle.api.Plugin
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import groovy.time.TimeCategory
 
 /**
@@ -28,7 +30,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         extension.region = extension.region ?: 'us-west-2'
         extension.cacheExpireHours = extension.cacheExpireHours ?: CACHE_EXPIRE_HOURS
         
-        project.afterEvaluate {
+        project.gradle.projectsEvaluated {
             configureRepositories(project, extension)
         }
     }
@@ -50,10 +52,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             repo.url = repoUrl
             repo.credentials {
                 username = "aws"
-                password = {
-                    // Lazy evaluation - only called when credentials are actually needed
-                    getSsoToken(project, domain, domainOwner, region, localProfile, cacheExpireHours)
-                }
+                password = getSsoToken(project, domain, domainOwner, region, localProfile, cacheExpireHours)
             }
         }
     }

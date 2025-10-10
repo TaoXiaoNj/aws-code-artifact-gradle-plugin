@@ -1,2 +1,122 @@
-# aws-code-artifact-gradle-plugin
-A Gradle plugin that allows you to access AWS Code Artifact
+# AWS CodeArtifact Gradle Plugin
+
+A Gradle plugin that simplifies AWS CodeArtifact repository configuration with automatic SSO token authentication and caching.
+
+## Features
+
+- **Automatic Authentication**: Automatically handles AWS CodeArtifact SSO token authentication
+- **Token Caching**: Caches SSO tokens locally to avoid repeated authentication requests
+- **Environment Detection**: Automatically detects if running in CircleCI or locally
+- **Easy Configuration**: Simple configuration through Gradle extension
+- **Cross-Platform**: Works on both local development and CI/CD environments
+
+## Usage
+
+### Applying the plugin
+
+Add the plugin to your `build.gradle`:
+
+```gradle
+plugins {
+    id 'com.github.tao.aws-codeartifact' version '0.1.0'
+}
+```
+
+### Configuration
+
+Configure your AWS CodeArtifact repository:
+
+```gradle
+awsCodeArtifact {
+    repoUrl = 'https://your-domain-123456789012.d.codeartifact.us-west-2.amazonaws.com/maven/your-repo/'
+    domain = 'your-domain'
+    domainOwner = '123456789012'
+    region = 'us-west-2'
+    localProfile = 'your-aws-profile'  // Optional, defaults to 'infra'
+    cacheExpireHours = 4               // Optional, defaults to 4
+}
+```
+
+### Required Configuration Properties
+
+- `repoUrl`: The full URL of your AWS CodeArtifact repository
+- `domain`: Your AWS CodeArtifact domain name
+- `domainOwner`: Your AWS account ID (12 digits)
+
+### Optional Configuration Properties
+
+- `region`: AWS region (defaults to 'us-west-2')
+- `localProfile`: AWS profile name for local development (defaults to 'infra')
+- `cacheExpireHours`: SSO token cache expiration time in hours (defaults to 4)
+
+## Prerequisites
+
+### Local Development
+
+1. **AWS CLI**: Install and configure AWS CLI
+2. **AWS Profile**: Set up an AWS profile (default: 'infra') with CodeArtifact permissions
+3. **SSO Login**: Ensure you're logged in to AWS SSO:
+   ```bash
+   aws sso login --profile infra
+   ```
+
+### CI/CD (CircleCI)
+
+The plugin automatically detects CircleCI environment and uses the appropriate authentication method. Ensure your CI environment has:
+
+1. AWS credentials configured
+2. Proper IAM permissions for CodeArtifact
+
+## How It Works
+
+1. **Token Caching**: The plugin caches SSO tokens in a local `.ssoToken.records` file
+2. **Automatic Refresh**: Tokens are automatically refreshed when they expire
+3. **Repository Configuration**: Automatically configures the Maven repository with credentials
+4. **Environment Detection**: Uses different authentication methods for local vs CI environments
+
+## Example
+
+```gradle
+plugins {
+    id 'java'
+    id 'com.github.tao.aws-codeartifact' version '0.1.0'
+}
+
+awsCodeArtifact {
+    repoUrl = 'https://mycompany-123456789012.d.codeartifact.us-west-2.amazonaws.com/maven/maven-central/'
+    domain = 'mycompany'
+    domainOwner = '123456789012'
+    region = 'us-west-2'
+    localProfile = 'mycompany-dev'
+}
+
+dependencies {
+    implementation 'com.mycompany:my-library:1.0.0'
+}
+```
+
+## Building and Publishing
+
+To build the plugin:
+
+```bash
+./gradlew build
+```
+
+To publish to Gradle Plugin Portal:
+
+```bash
+./gradlew publishPlugins
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

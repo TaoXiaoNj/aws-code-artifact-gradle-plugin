@@ -36,11 +36,11 @@ gradlePlugin {
 
     // Define the plugin
     plugins {
-        greeting {
-            id = 'org.example.greeting'
+        awsCodeArtifact {
+            id = 'com.github.tao.aws-codeartifact'
             displayName = 'AWS CodeArtifact Gradle Plugin'
-            description = 'A Gradle plugin to simplify interaction with AWS CodeArtifact.'
-            tags = ['aws', 'codeartifact']
+            description = 'A Gradle plugin to simplify AWS CodeArtifact repository configuration with automatic SSO token authentication and caching.'
+            tags = ['aws', 'codeartifact', 'maven', 'repository', 'authentication']
             implementationClass = 'org.example.AwsCodeArtifactGradlePluginPlugin'
         }
     }

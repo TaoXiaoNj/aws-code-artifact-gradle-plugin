@@ -1,15 +1,10 @@
-buildscript {
-    dependencies {
-        classpath files('../plugin/build/libs/plugin.jar')
-    }
-}
-
 plugins {
     id 'java'
+    id 'com.github.tao.aws-codeartifact' version '0.1.0'
 }
 
 group = 'org.example'
-version = 'unspecified'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
@@ -21,8 +16,16 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Configure AWS CodeArtifact
+awsCodeArtifact {
+    repoUrl = 'https://your-domain-123456789012.d.codeartifact.us-west-2.amazonaws.com/maven/your-repo/'
+    domain = 'your-domain'
+    domainOwner = '123456789012'
+    region = 'us-west-2'
+    localProfile = 'your-aws-profile'
+    cacheExpireHours = 4
+}
+
 test {
     useJUnitPlatform()
 }
-
-apply plugin: 'org.example.greeting'

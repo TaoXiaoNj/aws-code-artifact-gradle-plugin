@@ -18,7 +18,7 @@ Add the plugin to your `build.gradle`:
 
 ```gradle
 plugins {
-    id 'com.github.tao.aws-codeartifact' version '0.1.0'
+    id 'io.github.tao.aws-codeartifact' version '0.1.0'
 }
 ```
 
@@ -79,7 +79,7 @@ The plugin automatically detects CircleCI environment and uses the appropriate a
 ```gradle
 plugins {
     id 'java'
-    id 'com.github.tao.aws-codeartifact' version '0.1.0'
+    id 'io.github.tao.aws-codeartifact' version '0.1.0'
 }
 
 awsCodeArtifact {

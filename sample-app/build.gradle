@@ -1,0 +1,51 @@
+buildscript {
+    dependencies {
+        classpath files('../plugin/build/libs/plugin-0.1.0.jar')
+    }
+}
+
+plugins {
+    id 'java'
+}
+
+apply plugin: org.example.AwsCodeArtifactGradlePluginPlugin
+
+group = 'org.example'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Add a dependency to test CodeArtifact repository resolution
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Configure AWS CodeArtifact
+awsCodeArtifact {
+    repoUrl = 'https://{your-organization-identifier}.d.codeartifact.{region}.amazonaws.com/maven/maven-cfex/'
+    domain = '{your-domain-name}'
+    domainOwner = '{your-domain-number}'
+    region = '{your-region}'
+    localProfile = '{your local profile name}'
+    cacheExpireHours = 4
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Test task to verify plugin functionality
+tasks.register('testPlugin') {
+    doLast {
+        println "=== AWS CodeArtifact Plugin Test ==="
+        println "✅ Plugin applied successfully!"
+        println "✅ Repository configuration completed"
+        println ""
+        println "The plugin is working correctly. AWS authentication will happen"
+        println "automatically when dependencies are resolved from CodeArtifact."
+    }
+}

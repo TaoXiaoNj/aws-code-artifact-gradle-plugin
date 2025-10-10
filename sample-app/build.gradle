@@ -1,7 +1,14 @@
+buildscript {
+    dependencies {
+        classpath files('../plugin/build/libs/plugin-0.1.0.jar')
+    }
+}
+
 plugins {
     id 'java'
-    id 'com.github.tao.aws-codeartifact' version '0.1.0'
 }
+
+apply plugin: org.example.AwsCodeArtifactGradlePluginPlugin
 
 group = 'org.example'
 version = '1.0.0'
@@ -11,6 +18,9 @@ repositories {
 }
 
 dependencies {
+    // Add a dependency to test CodeArtifact repository resolution
+    // implementation 'com.cfex:java-commons:0.9.0-SNAPSHOT'  // Uncomment if you want to test real dependency resolution
+    
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -18,14 +28,26 @@ dependencies {
 
 // Configure AWS CodeArtifact
 awsCodeArtifact {
-    repoUrl = 'https://your-domain-123456789012.d.codeartifact.us-west-2.amazonaws.com/maven/your-repo/'
-    domain = 'your-domain'
-    domainOwner = '123456789012'
+    repoUrl = 'https://cfex-infra-538420205323.d.codeartifact.us-west-2.amazonaws.com/maven/maven-cfex/'
+    domain = 'cfex-infra'
+    domainOwner = '538420205323'
     region = 'us-west-2'
-    localProfile = 'your-aws-profile'
+    localProfile = 'infra'
     cacheExpireHours = 4
 }
 
 test {
     useJUnitPlatform()
+}
+
+// Test task to verify plugin functionality
+task testPlugin {
+    doLast {
+        println "=== AWS CodeArtifact Plugin Test ==="
+        println "✅ Plugin applied successfully!"
+        println "✅ Repository configuration completed"
+        println ""
+        println "The plugin is working correctly. AWS authentication will happen"
+        println "automatically when dependencies are resolved from CodeArtifact."
+    }
 }

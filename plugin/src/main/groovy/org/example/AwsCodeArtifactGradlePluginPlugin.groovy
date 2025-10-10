@@ -44,12 +44,16 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def domainOwner = extension.domainOwner
         def region = extension.region
         def localProfile = extension.localProfile
+        def cacheExpireHours = extension.cacheExpireHours
         
         project.repositories.maven { MavenArtifactRepository repo ->
             repo.url = repoUrl
             repo.credentials {
                 username = "aws"
-                password = getSsoToken(project, domain, domainOwner, region, localProfile, extension.cacheExpireHours)
+                password = {
+                    // Lazy evaluation - only called when credentials are actually needed
+                    getSsoToken(project, domain, domainOwner, region, localProfile, cacheExpireHours)
+                }
             }
         }
     }

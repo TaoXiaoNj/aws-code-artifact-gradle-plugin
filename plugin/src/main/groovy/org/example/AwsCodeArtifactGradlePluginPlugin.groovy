@@ -7,16 +7,14 @@ package org.example
 import org.gradle.api.Project
 import org.gradle.api.Plugin
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.provider.Provider
-import org.gradle.api.provider.ProviderFactory
 import groovy.time.TimeCategory
+import java.text.SimpleDateFormat
 
 /**
  * AWS CodeArtifact Gradle Plugin
  * Automatically configures AWS CodeArtifact repositories with SSO token authentication
  */
 class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
-    
     static final String SSO_CACHE_FILE = '.ssoToken.records'
     static final int CACHE_EXPIRE_HOURS = 4
     static final String TIMESTAMP_PATTERN = 'yyyyMMdd-HHmmss'
@@ -26,11 +24,11 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def extension = project.extensions.create('awsCodeArtifact', AwsCodeArtifactExtension, project)
         
         // Set default values
-        extension.localProfile = extension.localProfile ?: 'infra'
-        extension.region = extension.region ?: 'us-west-2'
-        extension.cacheExpireHours = extension.cacheExpireHours ?: CACHE_EXPIRE_HOURS
+        extension.localProfile = extension.localProfile
+        extension.region = extension.region
+        extension.cacheExpireHours = extension.cacheExpireHours
         
-        project.gradle.projectsEvaluated {
+        project.afterEvaluate {
             configureRepositories(project, extension)
         }
     }
@@ -38,6 +36,14 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     private void configureRepositories(Project project, AwsCodeArtifactExtension extension) {
         if (!extension.repoUrl) {
             project.logger.warn("AWS CodeArtifact repository URL not configured. Skipping repository configuration.")
+            return
+        }
+        
+        // Check if repository is already configured to avoid duplicates
+        if (project.repositories.any { repo -> 
+            repo instanceof MavenArtifactRepository &&
+                    repo.url.toString().contains('codeartifact')
+        }) {
             return
         }
         
@@ -52,7 +58,9 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             repo.url = repoUrl
             repo.credentials {
                 username = "aws"
-                password = getSsoToken(project, domain, domainOwner, region, localProfile, cacheExpireHours)
+                password = project.providers.provider {
+                    getSsoToken(project, domain, domainOwner, region, localProfile, cacheExpireHours)
+                }
             }
         }
     }
@@ -63,7 +71,9 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             project.logger.info("Using cached SSO token")
             return cachedToken
         }
-        
+
+        project.logger.info("Retrieving new SSO token ...")   
+
         def tokenValue = isRunByCircleCi() ? 
             loadCircleCiSsoToken(project, domain, domainOwner, region) : 
             loadLocalSsoToken(project, domain, domainOwner, region, localProfile)
@@ -79,30 +89,30 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     private String readCachedSsoToken(Project project) {
         def file = new File(project.projectDir, SSO_CACHE_FILE)
         if (!file.exists()) {
-            project.logger.debug("Local SSO cache does not exist")
+            project.logger.info("Local SSO cache does not exist")
             return null
         }
         
         def lines = file.readLines()
         if (lines.isEmpty()) {
-            project.logger.debug("Local SSO cache is empty")
+            project.logger.info("Local SSO cache is empty")
             return null
         }
         
         def lastLine = lines.last()
         if (lastLine.isBlank()) {
-            project.logger.debug("Last line of local SSO cache is blank")
+            project.logger.info("Last line of local SSO cache is blank")
             return null
         }
         
         def tokens = lastLine.split(' ')
         try {
-            def cachedTime = new java.text.SimpleDateFormat(TIMESTAMP_PATTERN).parse(tokens[0])
+            def cachedTime = new SimpleDateFormat(TIMESTAMP_PATTERN).parse(tokens[0])
             def currentTime = new Date()
             
             use(TimeCategory) {
                 if (currentTime.after(cachedTime + CACHE_EXPIRE_HOURS.hours)) {
-                    project.logger.debug("Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
+                    project.logger.info("Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
                     return null
                 }
                 

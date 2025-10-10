@@ -19,8 +19,6 @@ repositories {
 
 dependencies {
     // Add a dependency to test CodeArtifact repository resolution
-    implementation 'com.cfex:java-commons:0.19.1'  // Uncomment if you want to test real dependency resolution
-    
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -28,11 +26,11 @@ dependencies {
 
 // Configure AWS CodeArtifact
 awsCodeArtifact {
-    repoUrl = 'https://cfex-infra-538420205323.d.codeartifact.us-west-2.amazonaws.com/maven/maven-cfex/'
-    domain = 'cfex-infra'
-    domainOwner = '538420205323'
-    region = 'us-west-2'
-    localProfile = 'infra'
+    repoUrl = 'https://{your-organization-identifier}.d.codeartifact.{region}.amazonaws.com/maven/maven-cfex/'
+    domain = '{your-domain-name}'
+    domainOwner = '{your-domain-number}'
+    region = '{your-region}'
+    localProfile = '{your local profile name}'
     cacheExpireHours = 4
 }
 

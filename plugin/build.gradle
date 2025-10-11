@@ -41,7 +41,7 @@ gradlePlugin {
             displayName = 'AWS CodeArtifact Gradle Plugin'
             description = 'A Gradle plugin to simplify AWS CodeArtifact repository configuration with automatic SSO token authentication and caching.'
             tags = ['aws', 'codeartifact', 'maven', 'repository', 'authentication']
-            implementationClass = 'org.example.AwsCodeArtifactGradlePluginPlugin'
+            implementationClass = 'io.github.taoxiaonj.aws.codeartifact.AwsCodeArtifactGradlePluginPlugin'
         }
     }
 }

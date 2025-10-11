@@ -27,7 +27,7 @@ dependencies {
 }
 
 
-group = 'io.github.tao'
+group = 'io.github.taoxiaonj'
 version = '0.1.0'
 
 gradlePlugin {
@@ -37,11 +37,11 @@ gradlePlugin {
     // Define the plugin
     plugins {
         awsCodeArtifact {
-            id = 'io.github.tao.aws-codeartifact'
+            id = 'io.github.taoxiaonj.aws-codeartifact'
             displayName = 'AWS CodeArtifact Gradle Plugin'
             description = 'A Gradle plugin to simplify AWS CodeArtifact repository configuration with automatic SSO token authentication and caching.'
             tags = ['aws', 'codeartifact', 'maven', 'repository', 'authentication']
-            implementationClass = 'org.example.AwsCodeArtifactGradlePluginPlugin'
+            implementationClass = 'io.github.taoxiaonj.aws.codeartifact.AwsCodeArtifactGradlePluginPlugin'
         }
     }
 }

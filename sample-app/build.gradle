@@ -8,7 +8,7 @@ plugins {
     id 'java'
 }
 
-apply plugin: org.example.AwsCodeArtifactGradlePluginPlugin
+apply plugin: io.github.taoxiaonj.aws.codeartifact.AwsCodeArtifactGradlePluginPlugin
 
 group = 'org.example'
 version = '1.0.0'

@@ -2,7 +2,7 @@
  * AWS CodeArtifact Extension
  * Configuration extension for the AWS CodeArtifact Gradle Plugin
  */
-package org.example
+package io.github.taoxiaonj.aws.codeartifact
 
 import org.gradle.api.Project
 

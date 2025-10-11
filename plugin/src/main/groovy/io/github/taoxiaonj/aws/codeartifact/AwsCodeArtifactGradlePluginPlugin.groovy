@@ -2,7 +2,7 @@
  * AWS CodeArtifact Gradle Plugin
  * Provides automatic authentication and repository configuration for AWS CodeArtifact
  */
-package org.example
+package io.github.taoxiaonj.aws.codeartifact
 
 import org.gradle.api.Project
 import org.gradle.api.Plugin

@@ -18,7 +18,7 @@ Add the plugin to your `build.gradle`:
 
 ```gradle
 plugins {
-    id 'io.github.tao.aws-codeartifact' version '0.1.0'
+    id 'io.github.taoxiaonj.aws-codeartifact' version '0.1.0'
 }
 ```
 
@@ -32,8 +32,8 @@ awsCodeArtifact {
     domain = 'your-domain'
     domainOwner = '123456789012'
     region = 'us-west-2'
-    localProfile = 'your-aws-profile'  // Optional, defaults to 'infra'
-    cacheExpireHours = 4               // Optional, defaults to 4
+    localProfile = 'your-aws-profile'
+    cacheExpireHours = 4
 }
 ```
 
@@ -45,19 +45,19 @@ awsCodeArtifact {
 
 ### Optional Configuration Properties
 
-- `region`: AWS region (defaults to 'us-west-2')
-- `localProfile`: AWS profile name for local development (defaults to 'infra')
-- `cacheExpireHours`: SSO token cache expiration time in hours (defaults to 4)
+- `region`: AWS region
+- `localProfile`: AWS profile name for local development
+- `cacheExpireHours`: SSO token cache expiration time in hours
 
 ## Prerequisites
 
 ### Local Development
 
 1. **AWS CLI**: Install and configure AWS CLI
-2. **AWS Profile**: Set up an AWS profile (default: 'infra') with CodeArtifact permissions
+2. **AWS Profile**: Set up an AWS profile with CodeArtifact permissions
 3. **SSO Login**: Ensure you're logged in to AWS SSO:
    ```bash
-   aws sso login --profile infra
+   aws sso login --profile {local-profile-name}
    ```
 
 ### CI/CD (CircleCI)
@@ -79,7 +79,7 @@ The plugin automatically detects CircleCI environment and uses the appropriate a
 ```gradle
 plugins {
     id 'java'
-    id 'io.github.tao.aws-codeartifact' version '0.1.0'
+    id 'io.github.taoxiaonj.aws-codeartifact' version '0.1.0'
 }
 
 awsCodeArtifact {

@@ -1,6 +1,6 @@
 buildscript {
     dependencies {
-        classpath files('../plugin/build/libs/plugin-0.1.0.jar')
+        classpath files('../plugin/build/libs/plugin-0.2.0.jar')
     }
 }
 
@@ -13,12 +13,17 @@ apply plugin: io.github.taoxiaonj.aws.codeartifact.AwsCodeArtifactGradlePluginPl
 group = 'org.example'
 version = '1.0.0'
 
+
 repositories {
     mavenCentral()
 }
 
+
 dependencies {
     // Add a dependency to test CodeArtifact repository resolution
+    implementation 'com.cfex:java-commons:0.19.1'
+    implementation "org.mapstruct:mapstruct:1.6.3"
+
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -26,12 +31,8 @@ dependencies {
 
 // Configure AWS CodeArtifact
 awsCodeArtifact {
-    repoUrl = 'https://{your-organization-identifier}.d.codeartifact.{region}.amazonaws.com/maven/maven-cfex/'
-    domain = '{your-domain-name}'
-    domainOwner = '{your-domain-number}'
-    region = '{your-region}'
-    localProfile = '{your local profile name}'
-    cacheExpireHours = 4
+    repoUrl = 'https://{domain}-{account}.d.codeartifact.{region}.amazonaws.com/{your-repo}'
+    localProfile = 'infra'
 }
 
 test {

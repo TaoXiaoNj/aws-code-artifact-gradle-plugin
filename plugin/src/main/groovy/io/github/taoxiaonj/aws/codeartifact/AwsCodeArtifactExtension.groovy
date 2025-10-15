@@ -17,21 +17,6 @@ class AwsCodeArtifactExtension {
     String repoUrl
     
     /**
-     * AWS CodeArtifact domain name
-     */
-    String domain
-    
-    /**
-     * AWS CodeArtifact domain owner (AWS account ID)
-     */
-    String domainOwner
-    
-    /**
-     * AWS region for CodeArtifact
-     */
-    String region
-    
-    /**
      * Local AWS profile name for authentication
      */
     String localProfile

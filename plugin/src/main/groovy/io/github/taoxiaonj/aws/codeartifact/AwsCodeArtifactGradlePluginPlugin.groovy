@@ -36,16 +36,43 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             configureRepositories(project, extension)
         }
     }
+
+
+    /**
+     * Suppose {@code repoUrl} is like {@code "https://aa-bb-cc-12345.d.codeartifact.us-west-2.amazonaws.com/maven/maven-xyz/"},
+     * we will pase {@code "aa-bb-cc"} as {@code domain}, {@code "12345"} as {@code account}, and {@code "us-west-2"} as {@code region}.
+     * */
+    private static CodeArtifactRepoComponents parseRepoUrl(Project project, String repoUrl) {
+        def pattern = /https:\/\/([a-zA-Z0-9-]+)-(\d+)\.d\.codeartifact\.([a-z0-9-]+)\.amazonaws\.com.*/
+        def matcher = (repoUrl =~ pattern)
+
+        if (matcher.matches()) {
+            def domain = matcher[0][1 as String]    // cfex-infra
+            def account = matcher[0][2 as String]   // 538420205323
+            def region = matcher[0][3 as String]    // us-west-2
+
+            project.logger.info("   >>> Parsing repoUrl succeeded: domain = '${domain}', account = '${account}', region = '${region}'")
+            return new CodeArtifactRepoComponents(domain: domain, domainOwner: account, region: region)
+        }
+
+        throw new IllegalArgumentException("Failed parsing repoUrl '${repoUrl}'")
+    }
+
     
     private void configureRepositories(Project project, AwsCodeArtifactExtension extension) {
         def repoUrl = extension.repoUrl
-        def domain = extension.domain
-        def domainOwner = extension.domainOwner
-        def region = extension.region
+
+        if (!repoUrl) {
+            throw new IllegalArgumentException("repoUrl is not provided")
+        }
+
+        def parseRepoUrl = parseRepoUrl(project, repoUrl)
+
+        def domain = parseRepoUrl.domain
+        def domainOwner = parseRepoUrl.domainOwner
+        def region = parseRepoUrl.region
         def localProfile = extension.localProfile
         def cacheExpireHours = extension.cacheExpireHours ? extension.cacheExpireHours : CACHE_EXPIRE_HOURS
-
-        // todo: check ...
 
         project.repositories.maven { MavenArtifactRepository repo ->
             repo.url = repoUrl
@@ -75,7 +102,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         return tokenValue
     }
     
-    private boolean isRunByCircleCi() {
+    private static boolean isRunByCircleCi() {
         return System.getenv("CIRCLECI") == "true"
     }
     
@@ -117,7 +144,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         }
     }
     
-    private void saveSSOTokenToCacheFile(Project project, String token) {
+    private static void saveSSOTokenToCacheFile(Project project, String token) {
         def currentTime = new Date().format(TIMESTAMP_PATTERN)
         project.logger.info("   >>> Caching SSO cache with timestamp $currentTime")
         
@@ -126,7 +153,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
 
     
-    private String fetchSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
+    private static String fetchSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
         project.logger.info("   >>> Fetching SSO token with profile '${localProfile}' ...")
         
         def process = [
@@ -149,7 +176,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
 
 
-    private String fetchSsoToken(Project project, String domain, String domainOwner, String region) {
+    private static String fetchSsoToken(Project project, String domain, String domainOwner, String region) {
         project.logger.info("   >>> Fetching SSO token without profile ...")
         
         def process = [

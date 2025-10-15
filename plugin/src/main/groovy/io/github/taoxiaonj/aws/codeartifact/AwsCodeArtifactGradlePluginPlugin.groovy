@@ -47,12 +47,12 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def matcher = (repoUrl =~ pattern)
 
         if (matcher.matches()) {
-            def domain = matcher[0][1 as String]    // cfex-infra
-            def account = matcher[0][2 as String]   // 538420205323
-            def region = matcher[0][3 as String]    // us-west-2
+            def domain = matcher[0][1]    // cfex-infra
+            def account = matcher[0][2]   // 538420205323
+            def region = matcher[0][3]    // us-west-2
 
             project.logger.info("   >>> Parsing repoUrl succeeded: domain = '${domain}', account = '${account}', region = '${region}'")
-            return new CodeArtifactRepoComponents(domain: domain, domainOwner: account, region: region)
+            return new CodeArtifactRepoComponents(domain: domain, account: account, region: region)
         }
 
         throw new IllegalArgumentException("Failed parsing repoUrl '${repoUrl}'")
@@ -69,7 +69,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def parseRepoUrl = parseRepoUrl(project, repoUrl)
 
         def domain = parseRepoUrl.domain
-        def domainOwner = parseRepoUrl.domainOwner
+        def domainOwner = parseRepoUrl.account
         def region = parseRepoUrl.region
         def localProfile = extension.localProfile
         def cacheExpireHours = extension.cacheExpireHours ? extension.cacheExpireHours : CACHE_EXPIRE_HOURS

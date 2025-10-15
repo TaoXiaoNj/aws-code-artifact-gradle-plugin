@@ -10,7 +10,6 @@ import org.gradle.api.Project
  * Extension class for AWS CodeArtifact plugin configuration
  */
 class AwsCodeArtifactExtension {
-    
     /**
      * AWS CodeArtifact repository URL
      */

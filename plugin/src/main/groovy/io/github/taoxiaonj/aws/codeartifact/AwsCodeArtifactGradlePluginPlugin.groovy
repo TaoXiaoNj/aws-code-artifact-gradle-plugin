@@ -27,7 +27,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
      * {@code project.afterEvaluate} block.
      * */
     void apply(Project project) {
-        project.logger.lifecycle("   >>> Applying plugin awsCodeArtifact ...")
+        project.logger.info("   >>> 🚀  Applying plugin awsCodeArtifact ...")
 
         // Create extension for configuration
         def extension = project.extensions.create('awsCodeArtifact', AwsCodeArtifactExtension, project)
@@ -43,7 +43,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def domainOwner = extension.domainOwner
         def region = extension.region
         def localProfile = extension.localProfile
-        def cacheExpireHours = extension.cacheExpireHours
+        def cacheExpireHours = extension.cacheExpireHours ? extension.cacheExpireHours : CACHE_EXPIRE_HOURS
 
         // todo: check ...
 
@@ -57,15 +57,15 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
     
     private String getSsoToken(Project project, String domain, String domainOwner, String region, String localProfile, Integer cacheExpireHours) {
-        project.logger.lifecycle("   >>> Start loading SSO token ...")
+        project.logger.info("   >>> Start loading SSO token ...")
 
-        def cachedToken = readCachedSsoToken(project)
+        def cachedToken = readCachedSsoToken(project, cacheExpireHours)
         if (cachedToken != null) {
-            project.logger.lifecycle("   >>> ✅ Cached SSO token is available, will use it")
+            project.logger.info("   >>> ✅ Cached SSO token is available, will use it")
             return cachedToken
         }
 
-        project.logger.lifecycle("   >>> Retrieving new SSO token ...")
+        project.logger.info("   >>> Retrieving new SSO token ...")
 
         def tokenValue = isRunByCircleCi() ? 
             fetchCircleCiSsoToken(project, domain, domainOwner, region) :
@@ -79,22 +79,22 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         return System.getenv("CIRCLECI") == "true"
     }
     
-    private String readCachedSsoToken(Project project) {
+    private String readCachedSsoToken(Project project, Integer cacheExpireHours) {
         def file = new File(project.projectDir, SSO_CACHE_FILE)
         if (!file.exists()) {
-            project.logger.lifecycle("   >>> Local SSO cache does not exist")
+            project.logger.info("   >>> Local SSO cache does not exist")
             return null
         }
         
         def lines = file.readLines()
         if (lines.isEmpty()) {
-            project.logger.lifecycle("   >>> Local SSO cache is empty")
+            project.logger.info("   >>> Local SSO cache is empty")
             return null
         }
         
         def lastLine = lines.last()
         if (lastLine.isBlank()) {
-            project.logger.lifecycle("   >>> Last line of local SSO cache is blank")
+            project.logger.info("   >>> Last line of local SSO cache is blank")
             return null
         }
         
@@ -104,8 +104,8 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             def currentTime = new Date()
             
             use(TimeCategory) {
-                if (currentTime.after(cachedTime + CACHE_EXPIRE_HOURS.hours)) {
-                    project.logger.lifecycle("   >>> Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
+                if (currentTime.after(cachedTime + cacheExpireHours.hours)) {
+                    project.logger.info("   >>> Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
                     return null
                 }
                 
@@ -119,7 +119,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     
     private void saveSSOTokenToCacheFile(Project project, String token) {
         def currentTime = new Date().format(TIMESTAMP_PATTERN)
-        project.logger.lifecycle("   >>> Caching SSO cache with timestamp $currentTime")
+        project.logger.info("   >>> Caching SSO cache with timestamp $currentTime")
         
         def file = new File(project.projectDir, SSO_CACHE_FILE)
         file.append("\n$currentTime $token")
@@ -127,7 +127,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
     
     private String fetchLocalSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
-        project.logger.lifecycle("   >>> Fetching SSO token with profile '${localProfile}' ...")
+        project.logger.info("   >>> Fetching SSO token with profile '${localProfile}' ...")
         
         def process = [
             "/usr/local/bin/aws", "codeartifact", "get-authorization-token",
@@ -144,13 +144,13 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             throw new RuntimeException("   >>> Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
         }
         
-        project.logger.lifecycle("   >>> ✅ Successfully fetched SSO token")
+        project.logger.info("   >>> ✅ Successfully fetched SSO token")
         return process.text.trim()
     }
 
 
     private String fetchCircleCiSsoToken(Project project, String domain, String domainOwner, String region) {
-        project.logger.lifecycle("   >>> Fetching SSO token without profile ...")
+        project.logger.info("   >>> Fetching SSO token without profile ...")
         
         def process = [
             "aws", "codeartifact", "get-authorization-token",
@@ -166,7 +166,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             throw new RuntimeException("   >>> Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
         }
         
-        project.logger.lifecycle("   >>> ✅ Successfully fetched SSO token")
+        project.logger.info("   >>> ✅ Successfully fetched SSO token")
         return process.text.trim()
     }
 }

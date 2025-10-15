@@ -109,6 +109,32 @@ To publish to Gradle Plugin Portal:
 ./gradlew publishPlugins
 ```
 
+## Tuning
+
+To avoid distracting you the logs are by default disabled. 
+
+To see the logs, you can run the build command with an option `--info`.
+
+For example: 
+
+```shell
+./gradlew build --info
+```
+
+You would see log messages like:
+
+```aiignore
+Resolved plugin [id: 'java']
+   >>> Applying plugin awsCodeArtifact ...
+   >>> Start loading SSO token ...
+   >>> Local SSO cache does not exist
+   >>> Retrieving new SSO token ...
+   >>> Fetching SSO token with profile 'infra' ...
+   >>> ✅ Successfully fetched SSO token
+   >>> Caching SSO cache with timestamp 20251015-152931
+```
+
+
 ## Contributing
 
 1. Fork the repository

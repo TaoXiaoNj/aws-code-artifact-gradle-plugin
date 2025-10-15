@@ -15,7 +15,8 @@ import java.text.SimpleDateFormat
  * Automatically configures AWS CodeArtifact repositories with SSO token authentication
  */
 class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
-    static final String SSO_CACHE_FILE = '.ssoToken.records'
+    static final String HOME_DIR = System.getProperty('user.home')
+    static final String SSO_CACHE_FILE = HOME_DIR + '/.gradle/awsCodeArtifact/ssoToken.records'
     static final int CACHE_EXPIRE_HOURS = 4
     static final String TIMESTAMP_PATTERN = 'yyyyMMdd-HHmmss'
 
@@ -29,11 +30,24 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.logger.info("   >>> 🚀  Applying plugin awsCodeArtifact ...")
 
+        createCacheFolder(project)
+
         // Create extension for configuration
         def extension = project.extensions.create('awsCodeArtifact', AwsCodeArtifactExtension, project)
 
         project.afterEvaluate {
             configureRepositories(project, extension)
+        }
+    }
+
+
+    private static void createCacheFolder(Project project) {
+        def file = new File(SSO_CACHE_FILE)
+        def parent = file.getParentFile()
+
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs()
+            project.logger.info("   >>> Cache file directory is created: ${parent.getAbsolutePath()}")
         }
     }
 
@@ -107,7 +121,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
     
     private String readCachedSsoToken(Project project, Integer cacheExpireHours) {
-        def file = new File(project.projectDir, SSO_CACHE_FILE)
+        def file = new File(SSO_CACHE_FILE)
         if (!file.exists()) {
             project.logger.info("   >>> Local SSO cache does not exist")
             return null
@@ -143,12 +157,13 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             return null
         }
     }
-    
+
+
     private static void saveSSOTokenToCacheFile(Project project, String token) {
         def currentTime = new Date().format(TIMESTAMP_PATTERN)
         project.logger.info("   >>> Caching SSO cache with timestamp $currentTime")
         
-        def file = new File(project.projectDir, SSO_CACHE_FILE)
+        def file = new File(SSO_CACHE_FILE)
         file.append("\n$currentTime $token")
     }
 

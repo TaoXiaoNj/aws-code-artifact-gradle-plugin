@@ -130,7 +130,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         project.logger.info("   >>> Fetching SSO token with profile '${localProfile}' ...")
         
         def process = [
-            "/usr/local/bin/aws", "codeartifact", "get-authorization-token",
+            "aws", "codeartifact", "get-authorization-token",
             "--domain", domain,
             "--domain-owner", domainOwner,
             "--query", "authorizationToken",

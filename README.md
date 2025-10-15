@@ -124,14 +124,13 @@ For example:
 You would see log messages like:
 
 ```aiignore
-Resolved plugin [id: 'java']
-   >>> Applying plugin awsCodeArtifact ...
+   >>> 🚀  Applying plugin awsCodeArtifact ...
    >>> Start loading SSO token ...
    >>> Local SSO cache does not exist
    >>> Retrieving new SSO token ...
    >>> Fetching SSO token with profile 'infra' ...
    >>> ✅ Successfully fetched SSO token
-   >>> Caching SSO cache with timestamp 20251015-152931
+   >>> Caching SSO cache with timestamp 20251015-154008
 ```
 
 

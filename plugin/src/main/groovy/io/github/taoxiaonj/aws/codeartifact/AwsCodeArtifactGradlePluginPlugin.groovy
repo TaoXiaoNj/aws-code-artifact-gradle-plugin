@@ -68,8 +68,8 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         project.logger.info("   >>> Retrieving new SSO token ...")
 
         def tokenValue = isRunByCircleCi() ? 
-            fetchCircleCiSsoToken(project, domain, domainOwner, region) :
-            fetchLocalSsoToken(project, domain, domainOwner, region, localProfile)
+            fetchSsoToken(project, domain, domainOwner, region) :
+            fetchSsoToken(project, domain, domainOwner, region, localProfile)
         
         saveSSOTokenToCacheFile(project, tokenValue)
         return tokenValue
@@ -126,7 +126,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
 
     
-    private String fetchLocalSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
+    private String fetchSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
         project.logger.info("   >>> Fetching SSO token with profile '${localProfile}' ...")
         
         def process = [
@@ -149,7 +149,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
 
 
-    private String fetchCircleCiSsoToken(Project project, String domain, String domainOwner, String region) {
+    private String fetchSsoToken(Project project, String domain, String domainOwner, String region) {
         project.logger.info("   >>> Fetching SSO token without profile ...")
         
         def process = [

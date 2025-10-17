@@ -69,7 +69,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             return new CodeArtifactRepoComponents(domain: domain, account: account, region: region)
         }
 
-        throw new IllegalArgumentException("Failed parsing repoUrl '${repoUrl}'")
+        throw new IllegalArgumentException("[${project.name}] Failed parsing repoUrl '${repoUrl}'")
     }
 
     
@@ -77,7 +77,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def repoUrl = extension.repoUrl
 
         if (!repoUrl) {
-            throw new IllegalArgumentException("repoUrl is not provided")
+            throw new IllegalArgumentException("[${project.name}] repoUrl is not provided")
         }
 
         def parseRepoUrl = parseRepoUrl(project, repoUrl)

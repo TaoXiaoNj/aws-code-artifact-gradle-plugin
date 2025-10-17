@@ -28,7 +28,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
      * {@code project.afterEvaluate} block.
      * */
     void apply(Project project) {
-        project.logger.info("   >>> 🚀  Applying plugin awsCodeArtifact ...")
+        project.logger.info("   >>> [${project.name}] 🚀  Applying plugin 'awsCodeArtifact' ...")
 
         createCacheFolder(project)
 
@@ -47,7 +47,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
         if (parent != null && !parent.exists()) {
             parent.mkdirs()
-            project.logger.info("   >>> Cache file directory is created: ${parent.getAbsolutePath()}")
+            project.logger.info("   >>> [${project.name}] Cache file directory is created: ${parent.getAbsolutePath()}")
         }
     }
 
@@ -65,11 +65,11 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             def account = matcher[0][2]   // 538420205323
             def region = matcher[0][3]    // us-west-2
 
-            project.logger.info("   >>> Parsing repoUrl succeeded: domain = '${domain}', account = '${account}', region = '${region}'")
+            project.logger.info("   >>> [${project.name}] Parsing repoUrl succeeded: domain = '${domain}', account = '${account}', region = '${region}'")
             return new CodeArtifactRepoComponents(domain: domain, account: account, region: region)
         }
 
-        throw new IllegalArgumentException("Failed parsing repoUrl '${repoUrl}'")
+        throw new IllegalArgumentException("[${project.name}] Failed parsing repoUrl '${repoUrl}'")
     }
 
     
@@ -77,7 +77,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def repoUrl = extension.repoUrl
 
         if (!repoUrl) {
-            throw new IllegalArgumentException("repoUrl is not provided")
+            throw new IllegalArgumentException("[${project.name}] repoUrl is not provided")
         }
 
         def parseRepoUrl = parseRepoUrl(project, repoUrl)
@@ -98,15 +98,15 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
     
     private String getSsoToken(Project project, String domain, String domainOwner, String region, String localProfile, Integer cacheExpireHours) {
-        project.logger.info("   >>> Start loading SSO token ...")
+        project.logger.info("   >>> [${project.name}] Start loading SSO token ...")
 
         def cachedToken = readCachedSsoToken(project, cacheExpireHours)
         if (cachedToken != null) {
-            project.logger.info("   >>> ✅ Cached SSO token is available, will use it")
+            project.logger.info("   >>> [${project.name}] ✅ Cached SSO token is available, will use it")
             return cachedToken
         }
 
-        project.logger.info("   >>> Retrieving new SSO token ...")
+        project.logger.info("   >>> [${project.name}] Retrieving new SSO token ...")
 
         def tokenValue = isRunByCircleCi() ? 
             fetchSsoToken(project, domain, domainOwner, region) :
@@ -123,19 +123,19 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     private String readCachedSsoToken(Project project, Integer cacheExpireHours) {
         def file = new File(SSO_CACHE_FILE)
         if (!file.exists()) {
-            project.logger.info("   >>> Local SSO cache does not exist")
+            project.logger.info("   >>> [${project.name}] Local SSO cache does not exist")
             return null
         }
         
         def lines = file.readLines()
         if (lines.isEmpty()) {
-            project.logger.info("   >>> Local SSO cache is empty")
+            project.logger.info("   >>> [${project.name}] Local SSO cache is empty")
             return null
         }
         
         def lastLine = lines.last()
         if (lastLine.isBlank()) {
-            project.logger.info("   >>> Last line of local SSO cache is blank")
+            project.logger.info("   >>> [${project.name}] Last line of local SSO cache is blank")
             return null
         }
         
@@ -146,14 +146,14 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             
             use(TimeCategory) {
                 if (currentTime.after(cachedTime + cacheExpireHours.hours)) {
-                    project.logger.info("   >>> Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
+                    project.logger.info("   >>> [${project.name}] Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
                     return null
                 }
                 
                 return tokens[tokens.size() - 1]
             }
         } catch (Exception e) {
-            project.logger.warn("   >>> Failed to parse cached SSO token: ${e.message}")
+            project.logger.warn("   >>> [${project.name}] Failed to parse cached SSO token: ${e.message}")
             return null
         }
     }
@@ -161,7 +161,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
     private static void saveSSOTokenToCacheFile(Project project, String token) {
         def currentTime = new Date().format(TIMESTAMP_PATTERN)
-        project.logger.info("   >>> Caching SSO cache with timestamp $currentTime")
+        project.logger.info("   >>> [${project.name}] Caching SSO cache with timestamp $currentTime")
         
         def file = new File(SSO_CACHE_FILE)
         file.append("\n$currentTime $token")
@@ -169,7 +169,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
     
     private static String fetchSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
-        project.logger.info("   >>> Fetching SSO token with profile '${localProfile}' ...")
+        project.logger.info("   >>> [${project.name}] Fetching SSO token with profile '${localProfile}' ...")
         
         def process = [
             "aws", "codeartifact", "get-authorization-token",
@@ -183,16 +183,16 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         
         process.waitFor()
         if (process.exitValue() != 0) {
-            throw new RuntimeException("   >>> Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
+            throw new RuntimeException("   >>> [${project.name}] Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
         }
         
-        project.logger.info("   >>> ✅ Successfully fetched SSO token")
+        project.logger.info("   >>> [${project.name}] ✅ Successfully fetched SSO token")
         return process.text.trim()
     }
 
 
     private static String fetchSsoToken(Project project, String domain, String domainOwner, String region) {
-        project.logger.info("   >>> Fetching SSO token without profile ...")
+        project.logger.info("   >>> [${project.name}] Fetching SSO token without profile ...")
         
         def process = [
             "aws", "codeartifact", "get-authorization-token",
@@ -205,10 +205,10 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         
         process.waitFor()
         if (process.exitValue() != 0) {
-            throw new RuntimeException("   >>> Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
+            throw new RuntimeException("   >>> [${project.name}] Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
         }
         
-        project.logger.info("   >>> ✅ Successfully fetched SSO token")
+        project.logger.info("   >>> [${project.name}] ✅ Successfully fetched SSO token")
         return process.text.trim()
     }
 }

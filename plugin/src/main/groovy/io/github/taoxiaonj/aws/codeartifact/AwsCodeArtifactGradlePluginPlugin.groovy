@@ -96,9 +96,16 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             }
         }
     }
-    
+
+
     private String getSsoToken(Project project, String domain, String domainOwner, String region, String localProfile, Integer cacheExpireHours) {
         project.logger.info("   >>> [${project.name}] Start loading SSO token ...")
+
+        if (isRunByCircleCi()) {
+            region fetchSsoToken(project, domain, domainOwner, region);
+        }
+
+        handleSsoLogin(project, localProfile)
 
         def cachedToken = readCachedSsoToken(project, cacheExpireHours)
         if (cachedToken != null) {
@@ -108,17 +115,45 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
         project.logger.info("   >>> [${project.name}] Retrieving new SSO token ...")
 
-        def tokenValue = isRunByCircleCi() ? 
-            fetchSsoToken(project, domain, domainOwner, region) :
-            fetchSsoToken(project, domain, domainOwner, region, localProfile)
+        def tokenValue = fetchSsoToken(project, domain, domainOwner, region, localProfile)
         
         saveSSOTokenToCacheFile(project, tokenValue)
         return tokenValue
     }
+
+
+    /**
+     * Check if the caller identity by the given profile:
+     * <ul>
+     *     <li>if already logged in, skip</li>
+     *     <li>otherwise, will try login in the default browser, and then invalidate the token cache</li>
+     * </ul>
+     * */
+    private static void handleSsoLogin(Project project, String localProfile) {
+        project.logger.info("   >>> [${project.name}] Checking SSO login status ....")
+
+        def process = [
+                "aws", "sts", "get-caller-identity",
+                "--profile", localProfile
+        ].execute()
+
+        process.waitFor()
+
+        def exitValue = process.exitValue()
+        if (exitValue != 0) {
+            project.logger.warn("   >>> [${project.name}]  ⚠️ SSO Login status expired, will refresh ...")
+            runAwsSsoLogin(project, localProfile)
+            invalidateTokenInCacheFile(project)
+        } else {
+            project.logger.info("   >>> [${project.name}] ✅ Already logged-in by profile '${localProfile}'")
+        }
+    }
+
     
     private static boolean isRunByCircleCi() {
         return System.getenv("CIRCLECI") == "true"
     }
+
     
     private String readCachedSsoToken(Project project, Integer cacheExpireHours) {
         def file = new File(SSO_CACHE_FILE)
@@ -135,6 +170,8 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         
         def lastLine = lines.last()
         if (lastLine.isBlank()) {
+            // don't ignore or trim the last blank line
+            // it is a signal that we have just re-logged in and need to refetch token again
             project.logger.info("   >>> [${project.name}] Last line of local SSO cache is blank")
             return null
         }
@@ -167,6 +204,14 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         file.append("\n$currentTime $token")
     }
 
+
+    private static void invalidateTokenInCacheFile(Project project) {
+        project.logger.info("   >>> [${project.name}] Invalidating token cache file ...")
+
+        def file = new File(SSO_CACHE_FILE)
+        file.append("\n\n")
+    }
+
     
     private static String fetchSsoToken(Project project, String domain, String domainOwner, String region, String localProfile) {
         project.logger.info("   >>> [${project.name}] Fetching SSO token with profile '${localProfile}' ...")
@@ -182,12 +227,33 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         ].execute()
         
         process.waitFor()
-        if (process.exitValue() != 0) {
-            throw new RuntimeException("   >>> [${project.name}] Failed fetching AWS CodeArtifact token: ${process.errorStream.text}")
+
+        def exitValue = process.exitValue()
+        if (exitValue != 0) {
+            project.logger.error("   >>> [${project.name}] ❌ Failed fetching AWS CodeArtifact token (exitValue = ${exitValue}): ${process.errorStream.text}")
         }
         
         project.logger.info("   >>> [${project.name}] ✅ Successfully fetched SSO token")
         return process.text.trim()
+    }
+
+
+    private static void runAwsSsoLogin(Project project, String localProfile) {
+        project.logger.lifecycle("   >>> [${project.name}] Opening SSO authorization page in your default browser ....")
+
+        def process = [
+                "aws", "sso", "login",
+                "--profile", localProfile
+        ].execute()
+
+        process.waitFor()
+
+        def exitValue = process.exitValue()
+        if (exitValue != 0) {
+            throw new RuntimeException("   >>> [${project.name}] ❌ Failed refreshing AWS SSO token (exitValue = ${exitValue}): ${process.errorStream.text}")
+        }
+
+        project.logger.lifecycle("   >>> [${project.name}] ✅ Successfully refreshed AWS SSO token")
     }
 
 

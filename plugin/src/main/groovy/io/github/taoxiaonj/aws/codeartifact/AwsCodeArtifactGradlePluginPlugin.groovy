@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat
 class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     static final String HOME_DIR = System.getProperty('user.home')
     static final String SSO_CACHE_FILE = HOME_DIR + '/.gradle/awsCodeArtifact/ssoToken.records'
-    static final int CACHE_EXPIRE_HOURS = 4
+    static final int CACHE_EXPIRE_HOURS = 6
     static final String TIMESTAMP_PATTERN = 'yyyyMMdd-HHmmss'
 
     /**
@@ -102,7 +102,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         project.logger.info("   >>> [${project.name}] Start loading SSO token ...")
 
         if (isRunByCircleCi()) {
-            region fetchSsoToken(project, domain, domainOwner, region);
+            return fetchSsoToken(project, domain, domainOwner, region);
         }
 
         handleSsoLogin(project, localProfile)
@@ -119,6 +119,11 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         
         saveSSOTokenToCacheFile(project, tokenValue)
         return tokenValue
+    }
+
+
+    private static boolean isRunByCircleCi() {
+        return System.getenv("CIRCLECI") == "true"
     }
 
 
@@ -141,17 +146,12 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
         def exitValue = process.exitValue()
         if (exitValue != 0) {
-            project.logger.warn("   >>> [${project.name}]  ⚠️ SSO Login status expired, will refresh ...")
+            project.logger.warn("   >>> [${project.name}]  ⚠️  SSO Login status expired, will refresh ...")
             runAwsSsoLogin(project, localProfile)
             invalidateTokenInCacheFile(project)
         } else {
             project.logger.info("   >>> [${project.name}] ✅ Already logged-in by profile '${localProfile}'")
         }
-    }
-
-    
-    private static boolean isRunByCircleCi() {
-        return System.getenv("CIRCLECI") == "true"
     }
 
     
@@ -198,7 +198,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
     private static void saveSSOTokenToCacheFile(Project project, String token) {
         def currentTime = new Date().format(TIMESTAMP_PATTERN)
-        project.logger.info("   >>> [${project.name}] Caching SSO cache with timestamp $currentTime")
+        project.logger.info("   >>> [${project.name}] Caching SSO token with timestamp $currentTime")
         
         def file = new File(SSO_CACHE_FILE)
         file.append("\n$currentTime $token")

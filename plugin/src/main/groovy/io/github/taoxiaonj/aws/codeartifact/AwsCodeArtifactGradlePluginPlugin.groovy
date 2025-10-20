@@ -16,9 +16,13 @@ import java.text.SimpleDateFormat
  */
 class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     static final String HOME_DIR = System.getProperty('user.home')
-    static final String SSO_CACHE_FILE = HOME_DIR + '/.gradle/awsCodeArtifact/ssoToken.records'
     static final int CACHE_EXPIRE_HOURS = 6
     static final String TIMESTAMP_PATTERN = 'yyyyMMdd-HHmmss'
+
+    private static String getSsoCacheFilePath(String localProfile) {
+        return "${HOME_DIR}/.gradle/awsCodeArtifact/${localProfile}/ssoToken.records"
+    }
+
 
     /**
      * The plugin's {@code apply} method runs <b>before</b> Gradle evaluates the {@code awsCodeArtifact { ... }}
@@ -30,8 +34,6 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.logger.info("   >>> [${project.name}] 🚀  Applying plugin 'awsCodeArtifact' ...")
 
-        createCacheFolder(project)
-
         // Create extension for configuration
         def extension = project.extensions.create('awsCodeArtifact', AwsCodeArtifactExtension, project)
 
@@ -41,8 +43,8 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
 
 
-    private static void createCacheFolder(Project project) {
-        def file = new File(SSO_CACHE_FILE)
+    private static void createCacheFolder(Project project, String localProfile) {
+        def file = new File(getSsoCacheFilePath(localProfile))
         def parent = file.getParentFile()
 
         if (parent != null && !parent.exists()) {
@@ -88,6 +90,8 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def localProfile = extension.localProfile
         def cacheExpireHours = extension.cacheExpireHours ? extension.cacheExpireHours : CACHE_EXPIRE_HOURS
 
+        createCacheFolder(project, localProfile)
+
         project.repositories.maven { MavenArtifactRepository repo ->
             repo.url = repoUrl
             repo.credentials {
@@ -102,12 +106,12 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         project.logger.info("   >>> [${project.name}] Start loading SSO token ...")
 
         if (isRunByCircleCi()) {
-            return fetchSsoToken(project, domain, domainOwner, region);
+            return fetchSsoToken(project, domain, domainOwner, region)
         }
 
         handleSsoLogin(project, localProfile)
 
-        def cachedToken = readCachedSsoToken(project, cacheExpireHours)
+        def cachedToken = readCachedSsoToken(project, cacheExpireHours, localProfile)
         if (cachedToken != null) {
             project.logger.info("   >>> [${project.name}] ✅ Cached SSO token is available, will use it")
             return cachedToken
@@ -117,7 +121,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
         def tokenValue = fetchSsoToken(project, domain, domainOwner, region, localProfile)
         
-        saveSSOTokenToCacheFile(project, tokenValue)
+        saveSSOTokenToCacheFile(project, tokenValue, localProfile)
         return tokenValue
     }
 
@@ -138,8 +142,8 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         project.logger.info("   >>> [${project.name}] Checking SSO login status ....")
 
         def process = [
-                "aws", "sts", "get-caller-identity",
-                "--profile", localProfile
+            "aws", "sts", "get-caller-identity",
+            "--profile", localProfile
         ].execute()
 
         process.waitFor()
@@ -148,15 +152,15 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         if (exitValue != 0) {
             project.logger.warn("   >>> [${project.name}]  ⚠️  SSO Login status expired, will refresh ...")
             runAwsSsoLogin(project, localProfile)
-            invalidateTokenInCacheFile(project)
+            invalidateTokenInCacheFile(project, localProfile)
         } else {
             project.logger.info("   >>> [${project.name}] ✅ Already logged-in by profile '${localProfile}'")
         }
     }
 
     
-    private String readCachedSsoToken(Project project, Integer cacheExpireHours) {
-        def file = new File(SSO_CACHE_FILE)
+    private String readCachedSsoToken(Project project, Integer cacheExpireHours, String localProfile) {
+        def file = new File(getSsoCacheFilePath(localProfile))
         if (!file.exists()) {
             project.logger.info("   >>> [${project.name}] Local SSO cache does not exist")
             return null
@@ -196,19 +200,19 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     }
 
 
-    private static void saveSSOTokenToCacheFile(Project project, String token) {
+    private static void saveSSOTokenToCacheFile(Project project, String token, String localProfile) {
         def currentTime = new Date().format(TIMESTAMP_PATTERN)
         project.logger.info("   >>> [${project.name}] Caching SSO token with timestamp $currentTime")
         
-        def file = new File(SSO_CACHE_FILE)
+        def file = new File(getSsoCacheFilePath(localProfile))
         file.append("\n$currentTime $token")
     }
 
 
-    private static void invalidateTokenInCacheFile(Project project) {
+    private static void invalidateTokenInCacheFile(Project project, String localProfile) {
         project.logger.info("   >>> [${project.name}] Invalidating token cache file ...")
 
-        def file = new File(SSO_CACHE_FILE)
+        def file = new File(getSsoCacheFilePath(localProfile))
         file.append("\n\n")
     }
 

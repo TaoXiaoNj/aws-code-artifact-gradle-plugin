@@ -10,6 +10,13 @@ A Gradle plugin that simplifies AWS CodeArtifact repository configuration with a
 - **Easy Configuration**: Simple configuration through Gradle extension
 - **Cross-Platform**: Works on both local development and CI/CD environments
 
+## Pre-requisites
+
+1. [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) is installed.
+2. A named AWS [profile](https://docs.aws.amazon.com/cli/v1/userguide/cli-configure-files.html) is configured.
+3. JDK 18+ is installed. 
+
+
 ## Usage
 
 ### Applying the plugin
@@ -18,7 +25,7 @@ Add the plugin to your `build.gradle`:
 
 ```gradle
 plugins {
-    id 'io.github.taoxiaonj.aws-codeartifact' version '0.2.0'
+    id 'io.github.taoxiaonj.aws-codeartifact' version '0.2.4'
 }
 ```
 
@@ -35,27 +42,24 @@ awsCodeArtifact {
 
 ### Required Configuration Properties
 - `repoUrl`: The full URL of your AWS CodeArtifact repository
-
-### Optional Configuration Properties
 - `localProfile`: AWS profile name for local development
 
-## Prerequisites
 
-### Local Development
 
-1. **AWS CLI**: Install and configure AWS CLI
-2. **AWS Profile**: Set up an AWS profile with CodeArtifact permissions
-3. **SSO Login**: Ensure you're logged in to AWS SSO:
-   ```bash
-   aws sso login --profile {local-profile-name}
-   ```
-
-### CI/CD (CircleCI)
+## Case of running in CI/CD (CircleCI)
 
 The plugin automatically detects CircleCI environment and uses the appropriate authentication method. Ensure your CI environment has:
 
 1. AWS credentials configured
 2. Proper IAM permissions for CodeArtifact
+
+## Case of running locally
+
+If you have not logged in using AWS profile, or the earlier login has expired: 
+- you will be prompted to log-in again in your default browser.
+- an authentication web page will be automatically opened then you can finish the login step
+
+When log-in succeeds, the plugin will automatically fetch and cache the token, so that you don't need to fetch it again next time.
 
 ## How It Works
 
@@ -69,7 +73,7 @@ The plugin automatically detects CircleCI environment and uses the appropriate a
 ```gradle
 plugins {
     id 'java'
-    id 'io.github.taoxiaonj.aws-codeartifact' version '0.2.0'
+    id 'io.github.taoxiaonj.aws-codeartifact' version '0.2.4'
 }
 
 awsCodeArtifact {

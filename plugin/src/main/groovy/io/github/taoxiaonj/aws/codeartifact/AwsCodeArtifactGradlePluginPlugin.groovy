@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat
 class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
     static final String HOME_DIR = System.getProperty('user.home')
     static final int CACHE_EXPIRE_HOURS = 6
+    static final int SSO_LOGIN_CHECK_HOURS = 6
     static final String TIMESTAMP_PATTERN = 'yyyyMMdd-HHmmss'
 
     private static String getSsoCacheFilePath(String localProfile) {
@@ -109,7 +110,9 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
             return fetchSsoToken(project, domain, domainOwner, region)
         }
 
-        handleSsoLogin(project, localProfile)
+        if (shouldCheckSsoLogin(project, localProfile)) {
+            handleSsoLogin(project, localProfile)
+        }
 
         def cachedToken = readCachedSsoToken(project, cacheExpireHours, localProfile)
         if (cachedToken != null) {
@@ -128,6 +131,50 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
     private static boolean isRunByCircleCi() {
         return System.getenv("CIRCLECI") == "true"
+    }
+
+
+    /**
+     * Check if we should verify SSO login status based on the last timestamp in cache file.
+     * Only check if the last cached timestamp is older than SSO_LOGIN_CHECK_HOURS.
+     */
+    private static boolean shouldCheckSsoLogin(Project project, String localProfile) {
+        def file = new File(getSsoCacheFilePath(localProfile))
+        if (!file.exists()) {
+            project.logger.info("   >>> [${project.name}] Cache file does not exist, will check SSO login")
+            return true
+        }
+
+        def lines = file.readLines()
+        if (lines.isEmpty()) {
+            project.logger.info("   >>> [${project.name}] Cache file is empty, will check SSO login")
+            return true
+        }
+
+        def lastLine = lines.last()
+        if (lastLine.isBlank()) {
+            project.logger.info("   >>> [${project.name}] Last cache line is blank, will check SSO login")
+            return true
+        }
+
+        def tokens = lastLine.split(' ')
+        try {
+            def cachedTime = new SimpleDateFormat(TIMESTAMP_PATTERN).parse(tokens[0])
+            def currentTime = new Date()
+
+            use(TimeCategory) {
+                if (currentTime.after(cachedTime + SSO_LOGIN_CHECK_HOURS.hours)) {
+                    project.logger.lifecycle("   >>> [${project.name}] Last cache timestamp is older than ${SSO_LOGIN_CHECK_HOURS} hours, will check SSO login")
+                    return true
+                }
+            }
+
+            project.logger.info("   >>> [${project.name}] Last cache timestamp is recent, skip SSO login check")
+            return false
+        } catch (Exception e) {
+            project.logger.warn("   >>> [${project.name}] Failed to parse cache timestamp: ${e.message}, will check SSO login")
+            return true
+        }
     }
 
 

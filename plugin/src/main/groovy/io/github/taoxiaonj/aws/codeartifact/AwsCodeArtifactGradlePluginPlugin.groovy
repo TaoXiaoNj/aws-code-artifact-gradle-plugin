@@ -281,7 +281,7 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
 
         def exitValue = process.exitValue()
         if (exitValue != 0) {
-            project.logger.error("   >>> [${project.name}] ❌ Failed fetching AWS CodeArtifact token (exitValue = ${exitValue}): ${process.errorStream.text}")
+            throw new RuntimeException("   >>> [${project.name}] ❌ Failed fetching AWS CodeArtifact token (exitValue = ${exitValue}): ${process.errorStream.text}")
         }
         
         project.logger.info("   >>> [${project.name}] ✅ Successfully fetched SSO token")

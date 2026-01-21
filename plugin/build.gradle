@@ -28,7 +28,7 @@ dependencies {
 
 
 group = 'io.github.taoxiaonj'
-version = '0.2.6'
+version = '0.2.7'
 
 gradlePlugin {
     website = 'https://github.com/TaoXiaoNj/aws-code-artifact-gradle-plugin'

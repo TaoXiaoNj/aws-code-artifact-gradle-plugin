@@ -7,7 +7,6 @@ package io.github.taoxiaonj.aws.codeartifact
 import org.gradle.api.Project
 import org.gradle.api.Plugin
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import groovy.time.TimeCategory
 import java.text.SimpleDateFormat
 
 /**
@@ -64,9 +63,9 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         def matcher = (repoUrl =~ pattern)
 
         if (matcher.matches()) {
-            def domain = matcher[0][1]    // cfex-infra
-            def account = matcher[0][2]   // 538420205323
-            def region = matcher[0][3]    // us-west-2
+            def domain = matcher[0][1]
+            def account = matcher[0][2]
+            def region = matcher[0][3]
 
             project.logger.info("   >>> [${project.name}] Parsing repoUrl succeeded: domain = '${domain}', account = '${account}', region = '${region}'")
             return new CodeArtifactRepoComponents(domain: domain, account: account, region: region)
@@ -161,12 +160,11 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         try {
             def cachedTime = new SimpleDateFormat(TIMESTAMP_PATTERN).parse(tokens[0])
             def currentTime = new Date()
+            def expirationTime = new Date(cachedTime.time + SSO_LOGIN_CHECK_HOURS * 60 * 60 * 1000)
 
-            use(TimeCategory) {
-                if (currentTime.after(cachedTime + SSO_LOGIN_CHECK_HOURS.hours)) {
-                    project.logger.lifecycle("   >>> [${project.name}] Last cache timestamp is older than ${SSO_LOGIN_CHECK_HOURS} hours, will check SSO login")
-                    return true
-                }
+            if (currentTime.after(expirationTime)) {
+                project.logger.lifecycle("   >>> [${project.name}] Last cache timestamp is older than ${SSO_LOGIN_CHECK_HOURS} hours, will check SSO login")
+                return true
             }
 
             project.logger.info("   >>> [${project.name}] Last cache timestamp is recent, skip SSO login check")
@@ -231,15 +229,14 @@ class AwsCodeArtifactGradlePluginPlugin implements Plugin<Project> {
         try {
             def cachedTime = new SimpleDateFormat(TIMESTAMP_PATTERN).parse(tokens[0])
             def currentTime = new Date()
-            
-            use(TimeCategory) {
-                if (currentTime.after(cachedTime + cacheExpireHours.hours)) {
-                    project.logger.info("   >>> [${project.name}] Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
-                    return null
-                }
-                
-                return tokens[tokens.size() - 1]
+            def expirationTime = new Date(cachedTime.time + cacheExpireHours * 60 * 60 * 1000)
+
+            if (currentTime.after(expirationTime)) {
+                project.logger.info("   >>> [${project.name}] Local SSO cache expires, timestamp = ${cachedTime.format(TIMESTAMP_PATTERN)}")
+                return null
             }
+
+            return tokens[tokens.size() - 1]
         } catch (Exception e) {
             project.logger.warn("   >>> [${project.name}] Failed to parse cached SSO token: ${e.message}")
             return null
